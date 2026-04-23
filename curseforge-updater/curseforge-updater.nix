@@ -11,14 +11,21 @@ let
 
   appimageContents = appimageTools.extractType1 {
     inherit pname version src;
-    postExtract = ''
-      substituteInPlace $out/curseforge.desktop --replace-fail 'Exec=AppRun' 'Exec=curseforge'
-    '';
   };
 
 in 
   appimageTools.wrapType2 rec {
     inherit pname version src;
+
+    extraInstallCommands = ''
+      mkdir -p $out/share/applications
+      mkdir -p $out/share/icons/hicolor/512x512/apps
+
+      cp ${appimageContents}/curseforge.desktop $out/share/applications/curseforge.desktop
+
+      substituteInPlace $out/share/applications/curseforge.desktop \
+        --replace "Exec=Exec=AppRun --no-sandbox %U" "Exec=$out/bin/curseforge"
+    '';
 
     meta = {
       description = "World of Warcraft Addon Updater";
