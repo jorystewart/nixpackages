@@ -19,10 +19,10 @@ in
 
     extraInstallCommands = ''
       mkdir -p $out/share/applications
-      mkdir -p $out/share/icons/hicolor/1024x1024/apps
+      mkdir -p $out/share/icons/hicolor/512x512/apps
 
       cp ${appimageContents}/curseforge.desktop $out/share/applications/curseforge.desktop
-      cp ${appimageContents}/curseforge.png $out/share/icons/hicolor/1024x1024/apps/curseforge.png
+      cp ${appimageContents}/curseforge.png $out/share/icons/hicolor/512x512/apps/curseforge.png
 
       substituteInPlace $out/share/applications/curseforge.desktop \
         --replace-warn "Exec=AppRun" "Exec=$out/bin/${pname}"
