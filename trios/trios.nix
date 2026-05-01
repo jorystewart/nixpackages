@@ -38,6 +38,14 @@ in
       export CMAKE_PREFIX_PATH=${pkgs.zlib.dev}:${pkgs.zlib}:$CMAKE_PREFIX_PATH
     '';
 
+    postInstall = ''
+      chmod +x $out/app/trios/data/flutter_assets/assets/linux/7zip/x64/7zzs
+      
+      wrapProgram $out/bin/TriOS \
+        --set TMPDIR "/tmp" \
+        --set TEMP "/tmp"
+    '';
+
     desktopItems = [
       (makeDesktopItem {
         name = "TriOS";
