@@ -1,7 +1,7 @@
 { pkgs? import <nixpkgs> {} }:
 
 let
-  inherit (pkgs) lib stdenv fetchFromGitHub makeDesktopItem copyDesktopItems pulseaudio xdotool kdotool libnotify;
+  inherit (pkgs) lib fetchFromGitHub makeDesktopItem makeWrapper copyDesktopItems libpulseaudio xdotool kdotool libnotify maven jre;
 
   runtimeLibs = with pkgs; [
     libxxf86vm
@@ -19,9 +19,6 @@ let
     libusb1
   ];
 
-  buildJdk = pkgs.jdk21;
-  runJdk = pkgs.jdk25;
-
   pname = "pcpanel";
   version = "1.8-SNAPSHOT";
 
@@ -33,58 +30,28 @@ let
   }; 
 
 in
-  pkgs.maven.buildMavenPackage rec {
+  maven.buildMavenPackage rec {
     inherit pname version src;
 
-    jdk = buildJdk;
+    # Maven stuff
+    mvnHash = "";
 
-    mavenHash = "";
-    mvnExtraArgs = "-Dmaven.compiler.release=21 -Djlink.skip=true -DskipTests";
-    
-    nativeBuildInputs = with pkgs; [ makeWrapper copyDesktopItems ];
+    nativeBuildInputs = [ makeWrapper copyDesktopItems ];
 
-    postPatch = ''
-      # 1. Fix the NullPointerException in IconService
-      sed -i -E 's/new File\s*\(\s*path\s*\)/new File(path != null ? path : "\/tmp")/g' src/main/java/com/getpcpanel/commands/IconService.java
-
-      # 2. Downgrade Java version for toolchain compatibility
-      sed -i 's|<java.version>25</java.version>|<java.version>21</java.version>|g' pom.xml
-      sed -i 's|<maven.compiler.release>25</maven.compiler.release>|<maven.compiler.release>21</maven.compiler.release>|g' pom.xml
-      
-      # 3. Inject modern compiler plugin version
-      substituteInPlace pom.xml \
-        --replace-fail "<artifactId>maven-compiler-plugin</artifactId>" "<artifactId>maven-compiler-plugin</artifactId><version>3.13.0</version>"
-
-      # 4. REMOVE PLUGIN EXECUTION: 
-      # We target the specific jtoolprovider-plugin and its execution block.
-      # This replaces the execution definition with a comment, which is 100% XML safe.
-      substituteInPlace pom.xml \
-        --replace-fail "<executions>" ""
-    '';
-
-    preBuild = ''
-      export JAVA_HOME=${buildJdk}
-      export PATH=${buildJdk}/bin:$PATH
-    '';
+    buildInputs = [ jre xdotool kdotool libpulseaudio ];
 
     installPhase = ''
-      runHook preInstall
-      mkdir -p $out/share/java $out/bin
-      
-      cp target/PCPanel-*.jar $out/share/java/pcpanel.jar
+      mkdir -p $out/share/pcpanel $out/bin
+    
+      # Copy the generated JAR (adjust path based on maven output)
+      cp target/PCPanel-*.jar $out/share/pcpanel/PCPanel.jar
 
-      makeWrapper ${runJdk}/bin/java $out/bin/pcpanel \
-        --add-flags "--enable-native-access=ALL-UNNAMED" \
-        --add-flags "--add-opens=java.base/sun.misc=ALL-UNNAMED" \
-        --add-flags "--add-opens=java.base/java.lang=ALL-UNNAMED" \
-        --add-flags "--add-opens=java.base/java.io=ALL-UNNAMED" \
-        --add-flags "-Dfile.encoding=UTF-8" \
-        --add-flags "-jar $out/share/java/pcpanel.jar" \
-        --set GDK_BACKEND "wayland" \
-        --prefix PATH : ${lib.makeBinPath [ pulseaudio xdotool kdotool libnotify ]} \
-        --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath runtimeLibs}
-      runHook postInstall
-    '';
+      # Create a wrapper to include runtime dependencies
+      makeWrapper ${jre}/bin/java $out/bin/pcpanel \
+        --add-flags "-jar $out/share/pcpanel/PCPanel.jar" \
+        --prefix PATH : ${lib.makeBinPath [ xdotool kdotool ]} \
+        --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ libpulseaudio ]}
+  '';
 
     desktopItems = [
       (makeDesktopItem {
