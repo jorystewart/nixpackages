@@ -1,7 +1,7 @@
 { pkgs? import <nixpkgs> {} }:
 
 let
-  inherit (pkgs) lib fetchFromGitHub makeDesktopItem makeWrapper copyDesktopItems libpulseaudio xdotool kdotool libnotify maven jre;
+  inherit (pkgs) lib fetchFromGitHub makeDesktopItem makeWrapper copyDesktopItems libpulseaudio xdotool kdotool pulseaudio;
 
   runtimeLibs = with pkgs; [
     libxxf86vm
@@ -27,30 +27,57 @@ let
     repo = "PCPanel";
     rev = "main";
     hash = "sha256-95ssfzUL2aO6F59Eoo1qBE/xkMHsQ30c4Op9+cgDr9o=";
-  }; 
+  };
+
+  jdkWithFx = pkgs.zulu25.override { enableJavaFX = true; };
 
 in
-  maven.buildMavenPackage rec {
+  pkgs.maven.buildMavenPackage {
     inherit pname version src;
 
     # Maven stuff
-    mvnHash = "";
+    mvnHash = "sha256-WzplOXPwtoGjSiU0e7EXW0X67zorQOOV3rF3zCGHcBo=";
+    mvnJdk = jdkWithFx;
+    mvnFlags = "-DskipTests";
+
+    patches = [ ./pom.xml.patch ./IconService.patch ./SndCtrlPulseAudio.java.patch ];
 
     nativeBuildInputs = [ makeWrapper copyDesktopItems ];
 
-    buildInputs = [ jre xdotool kdotool libpulseaudio ];
+    buildInputs = [ jdkWithFx xdotool kdotool libpulseaudio ];
+
+    env = {
+      JAVA_HOME = "${jdkWithFx}";
+    };
 
     installPhase = ''
-      mkdir -p $out/share/pcpanel $out/bin
-    
-      # Copy the generated JAR (adjust path based on maven output)
-      cp target/PCPanel-*.jar $out/share/pcpanel/PCPanel.jar
+      runHook preInstall
 
-      # Create a wrapper to include runtime dependencies
-      makeWrapper ${jre}/bin/java $out/bin/pcpanel \
-        --add-flags "-jar $out/share/pcpanel/PCPanel.jar" \
-        --prefix PATH : ${lib.makeBinPath [ xdotool kdotool ]} \
-        --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ libpulseaudio ]}
+      mkdir -p $out/bin
+      mkdir -p $out/share/pcpanel
+      mkdir -p $out/share/pcpanel/lib
+    
+      cp target/dependency/pcpanel-${version}.jar $out/share/pcpanel/pcpanel.jar
+
+      if [ -d "target/dependency" ]; then
+        cp target/dependency/*.jar $out/share/pcpanel/lib/
+      fi
+
+      makeWrapper ${jdkWithFx}/bin/java $out/bin/pcpanel \
+        --add-flags "--enable-native-access=ALL-UNNAMED" \
+        --add-flags "--add-opens=java.base/sun.misc=ALL-UNNAMED" \
+        --add-flags "--add-opens=java.base/java.lang=ALL-UNNAMED" \
+        --add-flags "--add-opens=java.base/java.io=ALL-UNNAMED" \
+        --add-flags "--add-exports=javafx.controls/com.sun.javafx.scene.control.skin.resources=ALL-UNNAMED" \
+        --add-flags "--add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED" \
+        --add-flags "-Dfile.encoding=UTF-8" \
+        --add-flags "-cp $out/share/pcpanel/pcpanel.jar:$out/share/pcpanel/lib/*" \
+        --add-flags "com.getpcpanel.Main" \
+        --set GDK_BACKEND "wayland" \
+        --prefix PATH : ${lib.makeBinPath [ xdotool kdotool pulseaudio ]} \
+        --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath (runtimeLibs ++ [ libpulseaudio ])}
+
+        runHook postInstall
   '';
 
     desktopItems = [
@@ -64,7 +91,7 @@ in
       })
     ];
 
-    meta = with lib; {
+    meta = {
       description = "Third party controller software for PCPanel devices";
       homepage = "https://github.com/nvdweem/PCPanel";
       mainProgram = "pcpanel";

@@ -1,0 +1,17 @@
+diff --git a/src/main/java/com/getpcpanel/device/Device.java b/src/main/java/com/getpcpanel/device/Device.java
+--- a/src/main/java/com/getpcpanel/commands/IconService.java	2026-06-08 10:15:37.919619255 +0900
++++ b/src/main/java/com/getpcpanel/commands/IconService.java	2026-06-08 13:18:57.914713669 +0900
+@@ -131,11 +131,8 @@
+     }
+ 
+     private Image getFocusProcessIcon(CommandVolumeFocus command) {
+-        var image = iconService.getIconImageForFile(32, 32, new File(sndCtrl.getFocusApplication()));
+-        if (image == null) {
+-            return DEFAULT;
+-        }
+-        return image;
++        return DEFAULT;
++
+     }
+ 
+     private Image getDeviceIcon(Command command) {

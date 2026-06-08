@@ -1,0 +1,12 @@
+diff --git a/src/main/java/com/getpcpanel/cpp/linux/pulseaudio/SndCtrlPulseAudio.java b/src/main/java/com/getpcpanel/cpp/linux/pulseaudio/SndCtrlPulseAudio.java
+--- a/src/main/java/com/getpcpanel/cpp/linux/pulseaudio/SndCtrlPulseAudio.java 2026-06-08 14:03:30.338078084 +0900
++++ b/src/main/java/com/getpcpanel/cpp/linux/pulseaudio/SndCtrlPulseAudio.java 2026-06-08 14:04:02.601524383 +0900
+@@ -190,7 +190,7 @@
+ 
+     @Override
+     public @Nullable String defaultDeviceOnEmpty(String deviceId) {
+-        return null;
++        return deviceId != null ? deviceId: "";
+     }
+ 
+     @Override
