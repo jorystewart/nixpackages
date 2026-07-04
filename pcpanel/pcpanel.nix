@@ -1,100 +1,143 @@
-{ pkgs? import <nixpkgs> {} }:
+{ lib
+, stdenv
+, fetchurl
+, dpkg
+, autoPatchelfHook
+, makeWrapper
+, copyDesktopItems
+, libusb1
+, zlib
+, glib
+, gtk3
+, cairo
+, pango
+, atk
+, gdk-pixbuf
+, fontconfig
+, freetype
+, dbus
+, at-spi2-core
+, libx11
+, libxext
+, libxrender
+, libxtst
+, libxi
+, udev # provides libudev.so.1 — hid4java/JNA dlopen's this by name at runtime (not a static link, so autoPatchelf can't catch it; wired via LD_LIBRARY_PATH below)
+, kdotool
+, xdotool
+, pulseaudio
+}:
 
 let
-  inherit (pkgs) lib fetchFromGitHub makeDesktopItem makeWrapper copyDesktopItems libpulseaudio xdotool kdotool pulseaudio;
+  version = "2.0.71";
+  debFileName = "pcpanel_${version}_amd64.deb";
+  releaseTag = "latest-main";
+in
+stdenv.mkDerivation {
+  pname = "pcpanel";
+  inherit version;
 
-  runtimeLibs = with pkgs; [
-    libxxf86vm
+  src = fetchurl {
+    url = "https://github.com/nvdweem/PCPanel/releases/download/${releaseTag}/${debFileName}";
+    sha256 = "sha256-TCQQthPJCm4iPmCTJbDkG2maL1JJCG4rDrvtOW3wThM=";
+  };
+
+  nativeBuildInputs = [
+    dpkg
+    autoPatchelfHook
+    makeWrapper
+    copyDesktopItems
+  ];
+
+  buildInputs = [
+    stdenv.cc.cc.lib # libstdc++
+    zlib
+    libusb1 # libusb-1.0.so.0 — required for HID device access (documented dependency)
     glib
     gtk3
+    cairo
     pango
     atk
-    cairo
     gdk-pixbuf
+    fontconfig
+    freetype
+    dbus
+    at-spi2-core
     libx11
     libxext
     libxrender
     libxtst
-    libGL
-    libusb1
+    libxi
   ];
 
-  pname = "pcpanel";
-  version = "1.8-SNAPSHOT";
-
-  src = fetchFromGitHub {
-    owner = "nvdweem";
-    repo = "PCPanel";
-    rev = "main";
-    hash = "sha256-95ssfzUL2aO6F59Eoo1qBE/xkMHsQ30c4Op9+cgDr9o=";
-  };
-
-  jdkWithFx = pkgs.zulu25.override { enableJavaFX = true; };
-
-in
-  pkgs.maven.buildMavenPackage {
-    inherit pname version src;
-
-    # Maven stuff
-    mvnHash = "sha256-WzplOXPwtoGjSiU0e7EXW0X67zorQOOV3rF3zCGHcBo=";
-    mvnJdk = jdkWithFx;
-    mvnFlags = "-DskipTests";
-
-    patches = [ ./pom.xml.patch ./IconService.patch ./SndCtrlPulseAudio.java.patch ];
-
-    nativeBuildInputs = [ makeWrapper copyDesktopItems ];
-
-    buildInputs = [ jdkWithFx xdotool kdotool libpulseaudio ];
-
-    env = {
-      JAVA_HOME = "${jdkWithFx}";
-    };
-
-    installPhase = ''
-      runHook preInstall
-
-      mkdir -p $out/bin
-      mkdir -p $out/share/pcpanel
-      mkdir -p $out/share/pcpanel/lib
-    
-      cp target/dependency/pcpanel-${version}.jar $out/share/pcpanel/pcpanel.jar
-
-      if [ -d "target/dependency" ]; then
-        cp target/dependency/*.jar $out/share/pcpanel/lib/
-      fi
-
-      makeWrapper ${jdkWithFx}/bin/java $out/bin/pcpanel \
-        --add-flags "--enable-native-access=ALL-UNNAMED" \
-        --add-flags "--add-opens=java.base/sun.misc=ALL-UNNAMED" \
-        --add-flags "--add-opens=java.base/java.lang=ALL-UNNAMED" \
-        --add-flags "--add-opens=java.base/java.io=ALL-UNNAMED" \
-        --add-flags "--add-exports=javafx.controls/com.sun.javafx.scene.control.skin.resources=ALL-UNNAMED" \
-        --add-flags "--add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED" \
-        --add-flags "-Dfile.encoding=UTF-8" \
-        --add-flags "-cp $out/share/pcpanel/pcpanel.jar:$out/share/pcpanel/lib/*" \
-        --add-flags "com.getpcpanel.Main" \
-        --set GDK_BACKEND "wayland" \
-        --prefix PATH : ${lib.makeBinPath [ xdotool kdotool pulseaudio ]} \
-        --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath (runtimeLibs ++ [ libpulseaudio ])}
-
-        runHook postInstall
+  # Cheat and repackage the .deb instead of building from source
+  unpackPhase = ''
+    runHook preUnpack
+    dpkg-deb -x "$src" .
+    runHook postUnpack
   '';
 
-    desktopItems = [
-      (makeDesktopItem {
-        name = "pcpanel";
-        exec = "pcpanel";
-        icon = "pcpanel";
-        comment = "PCPanel Configuration Tool";
-        desktopName = "PCPanel";
-        categories = [ "Settings" "HardwareSettings" ];
-      })
-    ];
+  dontConfigure = true;
+  dontBuild = true;
 
-    meta = {
-      description = "Third party controller software for PCPanel devices";
-      homepage = "https://github.com/nvdweem/PCPanel";
-      mainProgram = "pcpanel";
-    };
-    
-  }
+  installPhase = ''
+    runHook preInstall
+
+    mkdir -p "$out/opt/pcpanel" "$out/bin" "$out/lib/udev/rules.d"
+
+    cp -r opt/pcpanel/. "$out/opt/pcpanel/"
+
+    # Desktop entry + icons
+    if [ -d usr/share/applications ]; then
+      mkdir -p "$out/share/applications"
+      cp -r usr/share/applications/. "$out/share/applications/"
+      substituteInPlace "$out"/share/applications/*.desktop \
+        --replace-quiet "/opt/pcpanel/PCPanel" "$out/bin/pcpanel" || true
+    fi
+    if [ -d usr/share/icons ]; then
+      mkdir -p "$out/share/icons"
+      cp -r usr/share/icons/. "$out/share/icons/"
+    fi
+
+    # Udev rules: install them into the store so they can be picked up via
+    # `services.udev.packages` in your NixOS configuration (see the
+    # accompanying configuration-snippet.nix). We also hardcode upstream's
+    # documented rule content as a fallback in case the .deb's copy isn't
+    # found at this path.
+    if [ -f usr/lib/udev/rules.d/70-pcpanel.rules ]; then
+      cp usr/lib/udev/rules.d/70-pcpanel.rules "$out/lib/udev/rules.d/"
+    else
+      cat > "$out/lib/udev/rules.d/70-pcpanel.rules" <<'EOF'
+SUBSYSTEM=="usb", ATTRS{idVendor}=="04D8", ATTRS{idProduct}=="eb52", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="a3c4", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="a3c5", TAG+="uaccess"
+EOF
+    fi
+
+    # Wrapper: expose `pcpanel` on PATH, make sure the runtime helper tools
+    # the app shells out to are found — `pactl` for volume control and
+    # `kdotool` for focus-window detection under KDE/Wayland (as documented
+    # in linux.md; `xdotool` included as an X11/XWayland fallback) — and set
+    # LD_LIBRARY_PATH so hid4java/JNA's runtime dlopen("libudev.so.1") can
+    # find it. This is a plain dlopen-by-name at runtime, not a static ELF
+    # dependency, so autoPatchelfHook has no NEEDED entry to patch a rpath
+    # for; LD_LIBRARY_PATH is the mechanism dlopen-by-bare-name honors.
+    chmod +x "$out/opt/pcpanel/PCPanel"
+    makeWrapper "$out/opt/pcpanel/PCPanel" "$out/bin/pcpanel" \
+      --prefix PATH : ${lib.makeBinPath [ pulseaudio kdotool xdotool ]} \
+      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ udev ]}
+
+    runHook postInstall
+  '';
+
+  meta = with lib; {
+    description = "Third-party controller software for PCPanel USB desk controllers";
+    longDescription = ''
+      Open-source alternative to the official PCPanel software.
+    '';
+    homepage = "https://github.com/nvdweem/PCPanel";
+    license = licenses.gpl3;
+    platforms = [ "x86_64-linux" ];
+    mainProgram = "pcpanel";
+  };
+}
