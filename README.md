@@ -7,4 +7,4 @@
 | randovania | $$\color{#C9C522}{\text{Partially working}}$$ | Metroid series randomizer |
 | rimsort | $$\color{green}{\text{Working}}$$ | Mod manager for RimWorld |
 | trios | $$\color{green}{\text{Working}}$$ | Mod manager for Starsector |
-
+| anker-powerconf-c200-linux-tools | $$\color{green}{\text{Working}}$$ | CLI tools for Anker Powerconf C200 webcam |
