@@ -8,17 +8,9 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "erans";
     repo = "anker-powerconf-c200-linux-tools";
     tag = "v${finalAttrs.version}";
-    # Run `nix-build -A ankerPowerconfC200LinuxTools` (or whatever attribute
-    # name you call this package with via callPackage) once with this
-    # placeholder in place; Nix will refuse to build and print the correct
-    # hash to paste in here. Alternatively, if you have nix-prefetch-github
-    # available: `nix-prefetch-github erans anker-powerconf-c200-linux-tools --rev v0.1.0`
     hash = "sha256-txIVTbqxnFQ8GcJgxTp89Qc3U5CXkYolXCO4E1PXHHA=";
   };
 
-  # Plain C11 sources built directly against the Linux UVC/V4L2 kernel
-  # headers (linux/videodev2.h, linux/uvcvideo.h, linux/usb/video.h) that
-  # ship with stdenv on Linux -- no extra libraries are required.
   strictDeps = true;
 
   enableParallelBuilding = true;
