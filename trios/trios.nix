@@ -1,59 +1,85 @@
-{ pkgs ? import <nixpkgs> {} }:
-let
+{ lib
+, stdenv
+, makeDesktopItem
+, fetchurl
+, unzip
+, autoPatchelfHook
+, makeWrapper
+, gtk3
+, glib
+, atk
+, pango
+, cairo
+, harfbuzz
+, gdk-pixbuf
+, libepoxy
+, fontconfig
+, curl
+, zlib
+}:
 
-  inherit (pkgs) lib stdenv fetchFromGitHub makeDesktopItem copyDesktopItems flutter;
-
+stdenv.mkDerivation (finalAttrs: {
   pname = "trios";
-  version = "1.4.1";
+  version = "1.6.1";
 
-  src = fetchFromGitHub {
-    owner = "wispborne";
-    repo = "TriOS";
-    rev = "main";
-    hash = "sha256-eNl5+6boOrfS9tDjIXMK4NA6WCNtUXJ/f03g9wM+uLw=";
+  src = fetchurl {
+    url = "https://github.com/wispborne/TriOS/releases/download/${finalAttrs.version}/TriOS-linux.zip";
+    hash = "sha256-Nksy+SBfUsV5z6aHCco2LIjTGG3GZhs7PxHrXiWYQE8=";
   };
 
-in
-  flutter.buildFlutterApplication rec {
-    inherit pname version src;
+  nativeBuildInputs = [
+    unzip
+    autoPatchelfHook
+    makeWrapper
+  ];
 
-    autoPubspecLock = "${src}/pubspec.lock";
-    
-    gitHashes = {
-      "open_filex" = "sha256-U6h3yAw0L7ZoQdviAz9YRuHBy9TwGVLQiRTH+Hl9R0g=";
-      "window_size" = "sha256-Y113BPSxlNnera/3Dq2BYAX1YiGbCrVgJsfClnLNhjk=";
-    };
+  buildInputs = [
+    gtk3
+    glib
+    atk
+    pango
+    cairo
+    harfbuzz
+    gdk-pixbuf
+    libepoxy
+    fontconfig
+    curl
+    zlib
+    stdenv.cc.cc.lib
+  ];
 
-    vendorHash = "";
+  # I'm not sure this is actually needed and I really don't want to mess with JVM if I don't have to
+  autoPatchelfIgnoreMissingDeps = [ "libjvm.so" ];
 
-    nativeBuildInputs = with pkgs; [ copyDesktopItems pkg-config ];
-    buildInputs = with pkgs; [ openssl zlib jre ];
+  installPhase = ''
+    runHook preInstall
 
-    preConfigure = ''
-      export C_INCLUDE_PATH=${pkgs.zlib.dev}/include:$C_INCLUDE_PATH
-      export CXX_INCLUDE_PATH=${pkgs.zlib.dev}/include:$CXX_INCLUDE_PATH
-      export LIBRARY_PATH=${pkgs.zlib}/lib:$LIBRARY_PATH
-      
-      # Some CMake versions also look here
-      export CMAKE_PREFIX_PATH=${pkgs.zlib.dev}:${pkgs.zlib}:$CMAKE_PREFIX_PATH
-    '';
+    mkdir -p $out/opt/trios $out/bin
+    cp -r . $out/opt/trios/
+    chmod +x $out/opt/trios/TriOS
 
-    postInstall = ''
-      chmod +x $out/app/trios/data/flutter_assets/assets/linux/7zip/x64/7zzs
-      
-      wrapProgram $out/bin/TriOS \
-        --set TMPDIR "/tmp" \
-        --set TEMP "/tmp"
-    '';
+    makeWrapper $out/opt/trios/TriOS $out/bin/trios \
+      --chdir $out/opt/trios
 
-    desktopItems = [
-      (makeDesktopItem {
-        name = "TriOS";
-        exec = "TriOS";
-        icon = "TriOS";
-        comment = "TriOS - Starsector Mod Manager";
-        desktopName = "TriOS";
-      })
-    ];
+    runHook postInstall
+  '';
 
-  }
+  desktopItems = [
+    (makeDesktopItem {
+      name = "TriOS";
+      exec = "TriOS";
+      icon = "TriOS";
+      comment = "TriOS - Starsector Mod Manager";
+      desktopName = "TriOS";
+    })
+  ];
+
+  meta = {
+    description = "Starsector Mod Manager";
+    homepage = "https://github.com/wispborne/TriOS";
+    # Uses a custom license that is very slightly modified from Apache 2.0.
+    license = lib.licenses.asl20;
+    platforms = [ "x86_64-linux" ];
+    mainProgram = "TriOS";
+  };
+})
