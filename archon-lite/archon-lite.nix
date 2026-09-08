@@ -2,11 +2,11 @@
 
 let
   pname = "archon-lite";
-  version = "v9.0.131";
+  version = "v9.6.0";
 
   src = fetchurl {
     url = "https://github.com/RPGLogs/Uploaders-archon/releases/download/${version}/archon-${version}.AppImage";
-    hash = "sha256-NLoUozR9UaebSzOp5ACupg8AeURa3ZfNN7a2yV/xXSc=";
+    hash = "sha256-69xo+1jMo91KQ6yoMOBTXLUzFRNGUJqH7G5ZeEiiX4I=";
   };
 
   appimageContents = appimageTools.extractType1 {
@@ -21,10 +21,10 @@ in
       mkdir -p $out/share/applications
       mkdir -p $out/share/icons/hicolor/512x512/apps
 
-      cp "${appimageContents}/Archon App.desktop" "$out/share/applications/Archon App.desktop"
-      cp "${appimageContents}/Archon App.png" "$out/share/icons/hicolor/512x512/apps/Archon App.png"
+      cp "${appimageContents}/archon.desktop" "$out/share/applications/archon.desktop"
+      cp "${appimageContents}/archon.png" "$out/share/icons/hicolor/512x512/apps/archon.png"
 
-      substituteInPlace "$out/share/applications/Archon App.desktop" \
+      substituteInPlace "$out/share/applications/archon.desktop" \
         --replace-warn "Exec=AppRun" "Exec=$out/bin/${pname}"
     '';
 
