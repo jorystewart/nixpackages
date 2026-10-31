@@ -28,7 +28,7 @@ outputs = { self, nixpkgs }:
       
       nixosModules.default = { pkgs, ... }: {
         nixpkgs.overlays = [ self.overlays.default ];
-        _module.args.localPkgs = pkgs.local;
+        _module.args.localpkgs = pkgs.local;
       };
     };
 }
