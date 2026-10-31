@@ -9,12 +9,12 @@ outputs = { self, nixpkgs }:
       forAllSystems = lib.genAttrs systems;
 
       names = builtins.attrNames
-        (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./localpkgs));
+        (lib.filterAttrs (n: type: type == "directory" && builtins.pathExists ././${n}/${n}.nix) (builtins.readDir ./.));
     in
     {
       overlays.default = final: _prev: {
         local = lib.makeScope final.newScope (self:
-          lib.genAttrs names (n: self.callPackage ./localpkgs/${n}/${n}.nix { }));
+          lib.genAttrs names (n: self.callPackage ././${n}/${n}.nix { }));
       };
 
       packages = forAllSystems (system:
