@@ -46,18 +46,20 @@ in
       stdenv.cc.cc.lib
     ];
 
-    unpackPhase = ''
-      mkdir -p $out/hitomi-downloader
-      tar -xzf $src -C $out/hitomi-downloader
-    '';
+    sourceRoot = ".";
 
     installPhase = ''
       runHook preInstall
 
-      mkdir -p $out/bin
-      cp $out/hitomi-downloader/hitomi-downloader $out/bin/hitomi-downloader
+      install -Dm755 hitomi-downloader $out/bin/hitomi-downloader
 
       runHook postInstall
+    '';
+
+    preFixup = ''
+      gappsWrapperArgs+=(
+        --set WEBKIT_DISABLE_DMABUF_RENDERER 1
+        )
     '';
 
     desktopItems = [
