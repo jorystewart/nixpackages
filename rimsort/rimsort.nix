@@ -5,7 +5,7 @@ let
   version = "1.17.4";
 
   src = fetchurl {
-    url = "https://github.com/RimSort/RimSort/releases/download/${version}/RimSort-${version}-x86_64.AppImage";
+    url = "https://github.com/RimSort/RimSort/releases/download/v${version}/RimSort-v${version}-x86_64.AppImage";
     hash = "sha256-/vPs7sIL4BNmswkRqHfG/D508GuIIsE/TKdd6BW+i4U=";
   };
 
