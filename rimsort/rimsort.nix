@@ -6,7 +6,7 @@ let
 
   src = fetchurl {
     url = "https://github.com/RimSort/RimSort/releases/download/v${version}/RimSort-v${version}-x86_64.AppImage";
-    hash = "sha256-/vPs7sIL4BNmswkRqHfG/D508GuIIsE/TKdd6BW+i4U=";
+    hash = "sha256-wsdjJotUa6bfp81AbuEehmzExtVOavgy7fUFejLUfHw=";
   };
 
   appimageContents = appimageTools.extractType1 {
