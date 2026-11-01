@@ -27,8 +27,8 @@ in
     desktopItems = [
       (makeDesktopItem {
         name = "Hitomi Downloader";
-        exec = "hitomji-downloader";
-        #icon = "${pname}";
+        exec = "hitomi-downloader";
+        icon = "hitomi-downloader";
         comment = "A downloader for hitomi.la";
       })
     ];
