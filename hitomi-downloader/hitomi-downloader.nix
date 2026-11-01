@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {}, fetchurl ? pkgs.fetchurl }:
+{ pkgs, fetchurl, copyDesktopItems, makeDesktopItem }:
 
 let
   pname = "hitomi-downloader";
@@ -13,6 +13,8 @@ in
   pkgs.stdenv.mkDerivation {
     inherit pname version src;
 
+    nativeBuildInputs = [ copyDesktopItems ];
+
     unpackPhase = ''
       mkdir -p $out/bin
       tar -xzf $src -C $out/bin
@@ -21,6 +23,15 @@ in
     installPhase = ''
       chmod +x $out/bin/hitomi-downloader
     '';
+
+    desktopItems = [
+      (makeDesktopItem {
+        name = "Hitomi Downloader";
+        exec = "hitomji-downloader";
+        #icon = "${pname}";
+        comment = "A downloader for hitomi.la";
+      })
+    ];
 
     meta = {
       description = "A downloader for hitomi.la";

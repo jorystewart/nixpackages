@@ -1,6 +1,7 @@
 { lib
 , stdenv
 , makeDesktopItem
+, copyDesktopItems
 , fetchurl
 , unzip
 , autoPatchelfHook
@@ -31,6 +32,7 @@ stdenv.mkDerivation (finalAttrs: {
     unzip
     autoPatchelfHook
     makeWrapper
+    copyDesktopItems
   ];
 
   buildInputs = [
