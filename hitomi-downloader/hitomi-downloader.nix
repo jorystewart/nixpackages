@@ -1,4 +1,18 @@
-{ pkgs, fetchurl, copyDesktopItems, makeDesktopItem }:
+{ lib
+, stdenv
+, fetchurl
+, copyDesktopItems
+, makeDesktopItem
+, autoPatchelfHook
+, wrapGAppsHook3
+, openssl
+, webkitgtk_4_1
+, gtk3
+, cairo
+, gdk-pixbuf
+, libsoup_3
+, glib
+}:
 
 let
   pname = "hitomi-downloader";
@@ -10,18 +24,38 @@ let
   };
 
 in
-  pkgs.stdenv.mkDerivation {
+  stdenv.mkDerivation {
     inherit pname version src;
 
-    nativeBuildInputs = [ copyDesktopItems ];
+    nativeBuildInputs = [
+      autoPatchelfHook
+      copyDesktopItems
+      wrapGAppsHook3
+    ];
+
+    buildInputs = [
+      openssl
+      webkitgtk_4_1
+      gtk3
+      cairo
+      gdk-pixbuf
+      libsoup_3
+      glib
+      stdenv.cc.cc.lib
+    ];
 
     unpackPhase = ''
-      mkdir -p $out/bin
-      tar -xzf $src -C $out/bin
+      mkdir -p $out/hitomi-downloader
+      tar -xzf $src -C $out/hitomi-downloader
     '';
 
     installPhase = ''
-      chmod +x $out/bin/hitomi-downloader
+      runHook preInstall
+
+      mkdir -p $out/bin
+      install -m755 $out/hitomi-downloader/hitomi-downloader $out/bin/hitomi-downloader
+
+      runHook postInstall
     '';
 
     desktopItems = [
@@ -36,6 +70,8 @@ in
 
     meta = {
       description = "A downloader for hitomi.la";
+      homepage = "https://github.com/lanyeeee/hitomi-downloader";
       platforms = [ "x86_64-linux" ];
+      license = lib.licenses.mit;
     };
   }
