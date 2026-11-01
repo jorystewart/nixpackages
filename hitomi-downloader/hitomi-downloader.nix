@@ -1,6 +1,7 @@
 { lib
 , stdenv
 , fetchurl
+, makeWrapper
 , copyDesktopItems
 , makeDesktopItem
 , autoPatchelfHook
@@ -30,6 +31,7 @@ in
     nativeBuildInputs = [
       autoPatchelfHook
       copyDesktopItems
+      makeWrapper
       wrapGAppsHook3
     ];
 
@@ -53,7 +55,7 @@ in
       runHook preInstall
 
       mkdir -p $out/bin
-      install -m755 $out/hitomi-downloader/hitomi-downloader $out/bin/hitomi-downloader
+      cp $out/hitomi-downloader/hitomi-downloader $out/bin/hitomi-downloader
 
       runHook postInstall
     '';
