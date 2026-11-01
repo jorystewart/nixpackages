@@ -29,7 +29,7 @@
 }:
 
 let
-  version = "2.1.0";
+  version = "2.5.0";
   debFileName = "pcpanel_${version}_amd64.deb";
   releaseTag = "v${version}";
 in
@@ -39,7 +39,7 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/nvdweem/PCPanel/releases/download/${releaseTag}/${debFileName}";
-    sha256 = "sha256-5TbeJShwVic/AVf8hOwnlY9mpImpLdZg9AjEWKPIR+Y=";
+    sha256 = "sha256-8jWzoY6bzZAfZ4NcGKUr3L8S5Oxq3vlWe1jBdVQvjyw=";
   };
 
   nativeBuildInputs = [

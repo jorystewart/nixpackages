@@ -2,11 +2,11 @@
 
 pkgs.stdenv.mkDerivation rec {
   pname = "randovania";
-  version = "10.8.0";
+  version = "11.1.1";
 
   src = pkgs.fetchurl {
     url = "https://github.com/randovania/randovania/releases/download/v${version}/randovania-${version}-linux.tar.gz";
-    hash = "sha256-mXUjyiaKqGGsyZNi96RX1bXWvCDZb63TOOfpsG1FT10="; 
+    hash = "sha256-m6/JRubGBspSnAjFqEqF78MeXUuT3br2nYPtncYP+B8="; 
   };
 
   nativeBuildInputs = [ pkgs.makeWrapper pkgs.copyDesktopItems pkgs.autoPatchelfHook ];

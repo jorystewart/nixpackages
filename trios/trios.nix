@@ -21,11 +21,11 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "trios";
-  version = "1.6.1";
+  version = "1.7.0";
 
   src = fetchurl {
     url = "https://github.com/wispborne/TriOS/releases/download/${finalAttrs.version}/TriOS-linux.zip";
-    hash = "sha256-Nksy+SBfUsV5z6aHCco2LIjTGG3GZhs7PxHrXiWYQE8=";
+    hash = "sha256-DUqfz4/Kk/73skvyC+3zainRfuLrQfqRFRdLRt4l+3Q=";
   };
 
   nativeBuildInputs = [

@@ -2,7 +2,7 @@
 
 let
   pname = "rimsort";
-  version = "v1.17.1";
+  version = "1.17.4";
 
   src = fetchurl {
     url = "https://github.com/RimSort/RimSort/releases/download/${version}/RimSort-${version}-x86_64.AppImage";
