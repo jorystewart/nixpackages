@@ -69,7 +69,7 @@ stdenv.mkDerivation (finalAttrs: {
   desktopItems = [
     (makeDesktopItem {
       name = "TriOS";
-      exec = "TriOS";
+      exec = "trios";
       icon = "TriOS";
       comment = "TriOS - Starsector Mod Manager";
       desktopName = "TriOS";
