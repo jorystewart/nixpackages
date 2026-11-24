@@ -2,11 +2,11 @@
 
 let
   pname = "curseforge_updater";
-  version = "1.325.0.41594";
+  version = "1.328.0.43478";
 
   src = fetchurl {
     url = "https://curseforge.overwolf.com/downloads/curseforge-latest-linux.AppImage";
-    hash = "sha256-vJpsXJabVyp6Ge+NPRwoy7yNUtlsO5xG7I1MrqUW7zc=";
+    hash = "sha256-OSG5vHmY654luaHC+0gKb0Bdjxnn012z+rGqX5MX40w=";
   };
 
   appimageContents = appimageTools.extractType1 {
